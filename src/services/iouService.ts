@@ -51,6 +51,24 @@ const iouService = {
 		await iouCollection.insertOne(newIou);
 		return await newIou;
 	},
+	updateIou: async (id: string, rawIou: Iou): Promise<Iou> => {
+		let iou = { ...rawIou, history: undefined };
+		delete iou.history;
+
+		await iouCollection.updateOne(
+			{ id },
+			{
+				$set: iou,
+				$pull: {
+					history: {
+						name: '修改',
+						time: new Date().getTime(),
+					},
+				},
+			}
+		);
+		return await getIou(id);
+	},
 	lendIou: async (id: string): Promise<Iou> => {
 		await iouCollection.updateOne(
 			{ id },
@@ -68,7 +86,10 @@ const iouService = {
 		);
 		return await getIou(id);
 	},
-	returnIou: async (returnIou: Iou): Promise<Iou> => {
+	returnIou: async (rawReturnIou: Iou): Promise<Iou> => {
+		const returnIou = { ...rawReturnIou, history: undefined };
+		delete returnIou.history;
+
 		const originIou = await getIou(returnIou.id);
 		let fullReturn = originIou.items.every((item) => {
 			let returnItem = returnIou.items.find(
@@ -91,7 +112,7 @@ const iouService = {
 			{
 				$set: {
 					status: returnType,
-					returnItems: returnIou.returnItems,
+					returnItems: returnIou.items,
 				},
 				$pull: {
 					history: {

@@ -1,5 +1,5 @@
 import { validateRequest } from '@/middlewares/requestValidationMiddlewares';
-import { Iou } from '@/models/Iou';
+import { Iou, iouZodSchema } from '@/models/Iou';
 import { Router } from 'express';
 import { z } from 'zod';
 
@@ -44,34 +44,7 @@ router.get('/not-full-finish', async function (req, res) {
 
 const iouRequestSchema = {
 	body: z.object({
-		iou: z.object({
-			id: z.string(),
-			borrower: z.string(),
-      image: z.string(),
-			items: z
-				.object({
-					name: z.string(),
-					amount: z.number(),
-				})
-				.array(),
-			returnItems: z
-				.object({
-					name: z.string(),
-					amount: z.number(),
-				})
-				.array(),
-			lendTime: z.number(),
-			returnTime: z.number(),
-			remark: z.string(),
-			operator: z.string(),
-			history: z
-				.object({
-					name: z.string(),
-					time: z.number(),
-				})
-				.array(),
-			status: z.string(),
-		}),
+		iou: iouZodSchema,
 	}),
 };
 router.post(
@@ -84,6 +57,31 @@ router.post(
 		} = req;
 		const newIou: Iou = await iouService.addNewIou(iou as Iou);
 		res.status(200).send(newIou);
+	}
+);
+
+// method: 'put'
+// path: '/api/v1/iou/:id'
+// summary: '更新借據'
+const updateIouRequestSchema = {
+	params: z.object({
+		id: z.string(),
+	}),
+	body: z.object({
+		iou: iouZodSchema,
+	}),
+};
+router.put(
+	'/:id',
+	validateRequest(updateIouRequestSchema),
+	async function (req, res) {
+		const {
+			services: { iou: iouService },
+			params: { id },
+      body: { iou },
+		} = req;
+		const lendIou: Iou = await iouService.updateIou(id, iou as Iou);
+		res.status(200).send(lendIou);
 	}
 );
 
